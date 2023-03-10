@@ -33,8 +33,12 @@ exports.postAddProduct = (req, res, next) => {
   const description = req.body.description;
   const price = req.body.price;
   const prod = new Product(null, title, imageUrl, description, price);
-  prod.save();
-  res.redirect("/");
+  prod
+    .save()
+    .then(() => {
+      res.redirect("/");
+    })
+    .catch((err) => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
