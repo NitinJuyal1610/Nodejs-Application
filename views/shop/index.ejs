@@ -7,6 +7,7 @@
 
     <main>
         <% if (prods.length > 0) { %>
+
             <div class="grid">
                 <% for (let product of prods) { %>
                     <article class="card product-item">
@@ -14,7 +15,7 @@
                             <h1 class="product__title"><%= product.title %></h1>
                         </header>
                         <div class="card__image">
-                            <img src="<%= product.imageUrl %>"
+                            <img src="/<%= product.imageUrl %>"
                                 alt="<%= product.title %>">
                         </div>
                         <div class="card__content">
@@ -31,6 +32,7 @@
                     </article>
                 <% } %>
             </div>
+            <%- include("../includes/pagination.ejs"), {currentPage:currentPage , previousPage:previousPage, nextPage:nextPage, hasPreviousPage:hasPreviousPage, hasNextPage:hasNextPage, lastPage:lastPage }%>
         <% } else { %>
             <h1>No Products Found!</h1>
         <% } %>

@@ -1,7 +1,9 @@
 const product = require('../models/product');
 const Product = require('../models/product');
+const fileHelper = require('../util/file');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
+
 exports.getAddProduct = (req, res, next) => {
   let message = req.flash('error');
   if (message.length > 0) {
@@ -50,10 +52,27 @@ exports.getEditProduct = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const description = req.body.description;
   const price = req.body.price;
 
+  if (!image) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add Product',
+      path: '/admin/add-product',
+      editing: false,
+      hasErrors: true,
+      product: {
+        title: title,
+        price: price,
+        description: description,
+      },
+      errorMessage: 'Attached file is not an image.',
+      validationErrors: [],
+    });
+  }
+
+  const imageUrl = image.path;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).render('admin/edit-product', {
@@ -71,8 +90,8 @@ exports.postAddProduct = (req, res, next) => {
       validationErrors: errors.array(),
     });
   }
+
   const product = new Product({
-    _id: new mongoose.Types.ObjectId('646d9cb913f11b73c3a0935c'),
     title: title,
     price: price,
     description: description,
@@ -82,7 +101,7 @@ exports.postAddProduct = (req, res, next) => {
   product
     .save()
     .then((results) => {
-      res.status.redirect('/admin/products');
+      res.redirect('/admin/products');
     })
     .catch((err) => {
       const error = new Error(err);
@@ -93,8 +112,6 @@ exports.postAddProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
   Product.find({ userId: req.user._id })
-    // .select('title price -_id')
-    // .populate('userId')
     .then((products) => {
       res.render('admin/products', {
         prods: products,
@@ -112,7 +129,7 @@ exports.getProducts = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const description = req.body.description;
   const price = req.body.price;
 
@@ -127,7 +144,6 @@ exports.postEditProduct = (req, res, next) => {
         title: title,
         price: price,
         description: description,
-        imageUrl: imageUrl,
         _id: prodId,
       },
       errorMessage: errors.array()[0].msg,
@@ -140,7 +156,10 @@ exports.postEditProduct = (req, res, next) => {
       if (product.userId.toString() !== req.user._id.toString())
         res.redirect('/');
       product.title = title;
-      product.imageUrl = imageUrl;
+      if (image) {
+        fileHelper.deleteFile(image.path);
+        product.imageUrl = image.path;
+      }
       product.description = description;
       product.price = price;
       return product.save();
@@ -155,17 +174,24 @@ exports.postEditProduct = (req, res, next) => {
     });
 };
 
-exports.postDeleteProduct = (req, res, next) => {
-  const prodId = req.body.productId;
-  Product.deleteOne({ _id: prodId, userId: req.user._id })
+exports.deleteProduct = (req, res, next) => {
+  const prodId = req.params.productId;
+  Product.findById(prodId)
+    .then((product) => {
+      if (!product) {
+        return next(new Error('Product Not find'));
+      }
+      fileHelper.deleteFile(product.imageUrl);
+      return Product.deleteOne({ _id: prodId, userId: req.user._id });
+    })
     .then((result) => {
       console.log(result);
       console.log('Deleted the Product');
-      res.redirect('/admin/products');
+      res.status(200).json({ message: 'Success!' });
     })
     .catch((err) => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      res.status(500).json({
+        message: 'Deleting product failed. ',
+      });
     });
 };
