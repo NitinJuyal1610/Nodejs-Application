@@ -22,8 +22,7 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use(bodyParser.urlencoded());
 app.use(cookieParser('secret'));
-const MONGODB_URI =
-  'mongodb+srv://nj:gRaVWaT0CL1FDB4k@cluster0.qk2yilc.mongodb.net/shop?retryWrites=true&w=majority';
+const MONGODB_URI = '';
 const store = new mongoDbStore({
   uri: MONGODB_URI,
   collection: 'sessions',
