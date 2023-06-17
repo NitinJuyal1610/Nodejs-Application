@@ -32,14 +32,11 @@ router.post(
     check('email')
       .isEmail()
       .withMessage('Please Enter a valid Email !')
-      .custom((value, { req }) => {
-        return User.findOne({ email: value }).then((userDoc) => {
-          if (userDoc) {
-            return Promise.reject(
-              'Email already exists , pick a different one.',
-            );
-          }
-        });
+      .custom(async (value, { req }) => {
+        const userDoc = await User.findOne({ email: value });
+        if (userDoc) {
+          return Promise.reject('Email already exists , pick a different one.');
+        }
       })
       .trim(),
     body(
